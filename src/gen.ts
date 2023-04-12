@@ -44,9 +44,10 @@ const generateParamType = (item: {
 const generateTS = (options: {
 	sourceFilePath: string
 	targetFilePath: string
+	requestImportStatement: string
 }) => {
 
-	const { sourceFilePath, targetFilePath } = options
+	const { sourceFilePath, targetFilePath, requestImportStatement } = options
 
 	const result = fs.readFileSync(sourceFilePath).toString()
 	const json = JSON.parse(result)
@@ -85,23 +86,35 @@ const generateTS = (options: {
 		return `/**
  * ${item[method].summary.split('\n@author')[0]}
  */
-export const ${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_')} = (params: ${params}): Promise<${item[method].responses[200].schema['$ref'].split('#/definitions/')[1]}> => {
-  return request.${method}('${path.replace(/-/g, '_')}', params)
+export const ${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_')} = (params: ${params}): Promise<{body: ${item[method].responses[200].schema['$ref'].split('#/definitions/')[1]}}> => {
+  return customFetch({
+		url: '${path.replace(/-/g, '_')}',
+		method: '${method}',
+		query: params,
+		body: params,
+	})
 }`
 }).join('\n\n')
 
-	const requestImport = `const request: any = {
-  get: () => { },
-  post: () => { }
-}
-`
+	fs.writeFileSync(targetFilePath, [requestImportStatement, definitionTypes, routeRequests].join('\n'))
 
-	fs.writeFileSync(targetFilePath, [requestImport, definitionTypes, routeRequests].join('\n'))
-
-	console.log('file generated', targetFilePath)
+	console.log('file generated, full path:', targetFilePath)
 }
 
-export const gen = (rootDir: string) => {
+interface GenOptions {
+	/**
+	 * 执行生成任务的根目录
+	 */
+	rootDir: string
+	/**
+	 * request请求类文件路径
+	 */
+	requestInstancePath: string
+}
+
+export const gen = (options: GenOptions) => {
+
+	const { rootDir, requestInstancePath } = options
 
 	console.log('original root', rootDir)
 
@@ -119,6 +132,9 @@ export const gen = (rootDir: string) => {
 
 	const directories = fs.readdirSync(baseDir)
 
+	const requestImportStatement = `import customFetch from '${requestInstancePath}'
+`
+
 	directories.forEach((dir) => {
 		if (excludePaths.includes(dir)) {
 			return
@@ -132,7 +148,8 @@ export const gen = (rootDir: string) => {
 
 				generateTS({
 					sourceFilePath: path.join(fullPath, file),
-					targetFilePath: path.join(fullPath, `${fileName}.ts`)
+					targetFilePath: path.join(fullPath, `${fileName}.ts`),
+					requestImportStatement
 				})
 			}
 		})
