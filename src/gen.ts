@@ -82,15 +82,18 @@ const generateTS = (options: {
     ${parameter.name.includes('.') ? `'${parameter.name}'` : parameter.name}: ${generateParamType(parameter)}`
 		})}
   }`
-		return `  /**
-   * ${item[method].summary.split('\n@author')[0]}
-   */
-  export const ${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_')} = (params: ${params}): Promise<${item[method].responses[200].schema['$ref'].split('#/definitions/')[1]}> => {
-    return request.${method}('${path.replace(/-/g, '_')}', params)
-  }`
-	}).join('\n\n')
+		return `/**
+ * ${item[method].summary.split('\n@author')[0]}
+ */
+export const ${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_')} = (params: ${params}): Promise<${item[method].responses[200].schema['$ref'].split('#/definitions/')[1]}> => {
+  return request.${method}('${path.replace(/-/g, '_')}', params)
+}`
+}).join('\n\n')
 
-	const requestImport = `import request from './request'
+	const requestImport = `const request: any = {
+  get: () => { },
+  post: () => { }
+}'
 `
 
 	fs.writeFileSync(targetFilePath, [requestImport, definitionTypes, routeRequests].join('\n'))
