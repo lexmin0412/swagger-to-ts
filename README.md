@@ -26,5 +26,5 @@ gen(rootDir)
 ### CLI Usage
 
 ```shell
-npx gen ./
+npx s2c ./
 ```
