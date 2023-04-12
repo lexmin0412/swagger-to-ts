@@ -93,7 +93,7 @@ export const ${method}_${path.split('/').slice(1).join('_').split('v1_')[1].repl
 	const requestImport = `const request: any = {
   get: () => { },
   post: () => { }
-}'
+}
 `
 
 	fs.writeFileSync(targetFilePath, [requestImport, definitionTypes, routeRequests].join('\n'))
