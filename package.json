@@ -1,0 +1,43 @@
+{
+	"name": "@lexmin0412/swagger2ts",
+	"version": "0.0.1",
+	"description": "a tool for transfer swagger to ts, available both for API and CLI",
+	"main": "./lib/index.js",
+	"bin": "./bin/s2t.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build:commonjs": "rimraf lib && tsc --target es5 --outDir lib --module commonjs --declaration",
+		"build:es": "rimraf es && tsc --target es6 --outDir es --module es6",
+		"build": "npm run build:commonjs && npm run build:es",
+		"ts": "ts-node src/",
+		"prepublishOnly": "npm run build"
+	},
+	"keywords": [
+		"swagger",
+		"jsonschema",
+		"typescript"
+	],
+	"author": "lexmin0412 <zhangle_dev@outlook.com>",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/lexmin0412/swagger-to-ts"
+	},
+	"publishConfig": {
+		"registry": "https://registry.npmjs.org/",
+		"access": "public"
+	},
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^18.15.11",
+		"rimraf": "^5.0.0",
+		"ts-node": "^10.9.1",
+		"typescript": "^5.0.4"
+	},
+	"files": [
+		"es",
+		"lib"
+	],
+	"types": "./lib/index.d.ts",
+	"jsnext:main": "./es/index.js",
+	"module": "./es/index.js"
+}
