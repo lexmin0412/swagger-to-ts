@@ -1,9 +1,11 @@
 {
 	"name": "@lexmin0412/swagger2ts",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "a tool for transfer swagger to ts, available both for API and CLI",
 	"main": "./lib/index.js",
-	"bin": "./bin/s2t.js",
+	"bin": {
+		"s2t": "./bin/s2t.js"
+	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build:commonjs": "rimraf lib && tsc --target es5 --outDir lib --module commonjs --declaration",
