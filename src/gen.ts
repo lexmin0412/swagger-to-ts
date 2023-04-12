@@ -114,7 +114,7 @@ export const gen = (rootDir: string) => {
 		'package.json'
 	]
 
-	const directories = fs.readdirSync(path.resolve(__dirname))
+	const directories = fs.readdirSync(baseDir)
 
 	directories.forEach((dir) => {
 		if (excludePaths.includes(dir)) {
