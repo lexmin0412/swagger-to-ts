@@ -113,12 +113,12 @@ interface GenOptions {
 	/**
 	 * 忽略的目录
 	 */
-	excludeDirs: string[]
+	excludeDirs?: string[]
 }
 
 export const gen = (options: GenOptions) => {
 
-	const { rootDir, requestInstancePath, excludeDirs } = options
+	const { rootDir, requestInstancePath, excludeDirs = [] } = options
 
 	console.log('original root', rootDir)
 
@@ -127,6 +127,7 @@ export const gen = (options: GenOptions) => {
 	console.log('real root', baseDir)
 
 	const excludePaths = [
+		'node_modules',
 		'.DS_Store',
 		'.vscode',
 		'.idea',
