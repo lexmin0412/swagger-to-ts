@@ -1,6 +1,6 @@
 {
 	"name": "@lexmin0412/swagger2ts",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"description": "a tool for transfer swagger to ts, available both for API and CLI",
 	"main": "./lib/index.js",
 	"bin": {
