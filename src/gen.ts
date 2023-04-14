@@ -21,10 +21,10 @@ const generateParamType = (item: {
 	switch (item.type) {
 		case 'array':
 			if (item.items.type) {
-				return `${item.items.type}[]`
+				return `${[generateParamType(item.items)]}[]`
 			}
 			if (item.items["$ref"]) {
-				return `${item.items["$ref"].split('#/definitions/')[1]}[]`
+				return `${item.items["$ref"].split('#/definitions/')[1].replace(/\./g, '__') }[]`
 			}
 			return undefined
 		case 'object':
@@ -35,7 +35,7 @@ const generateParamType = (item: {
       }`
 		default:
 			if (item['$ref']) {
-				return item['$ref'].split('#/definitions/')[1]
+				return item['$ref'].split('#/definitions/')[1].replace(/\./g, '__')
 			}
 			break;
 	}
@@ -55,7 +55,7 @@ const generateTS = (options: {
 	// 类型定义
 	const definitionTypes = Object.keys(json.definitions).map((definition) => {
 		const item = json.definitions[definition]
-		return `export interface ${definition} { ${Object.keys(item.properties || []).map((property) => {
+		return `export interface ${definition.replace(/\./g, '__') } { ${Object.keys(item.properties || []).map((property) => {
 			const title = item.properties[property]?.title || item.properties[property]?.description
 			const requiredMark = '@required'
 			const isRequired = title?.includes(requiredMark)
@@ -72,7 +72,7 @@ const generateTS = (options: {
 	const routeRequests = Object.keys(json.paths).map((path) => {
 		const item = json.paths[path]
 		const method = Object.keys(item)[0]
-		const params = method === 'post' ? item[method].parameters[0].schema['$ref'].split('#/definitions/')[1] : `{${item[method].parameters.map((parameter: any) => {
+		const params = method === 'post' ? item[method].parameters[0].schema['$ref'].split('#/definitions/')[1].replace(/\./g, '__') : `{${item[method].parameters.map((parameter: any) => {
 			const title = parameter.description
 			const requiredMark = '@required'
 			const isRequired = title?.includes(requiredMark)
@@ -86,7 +86,7 @@ const generateTS = (options: {
 		return `/**
  * ${item[method].summary.split('\n@author')[0]}
  */
-export const ${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_')} = (params: ${params}): Promise<{body: ${item[method].responses[200].schema['$ref'].split('#/definitions/')[1]}}> => {
+export const ${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_') } = (params: ${params}): Promise<{body: ${item[method].responses[200].schema['$ref'].split('#/definitions/')[1].replace(/\./g, '__')}}> => {
   return customFetch({
 		url: '${path.replace(/-/g, '_')}',
 		method: '${method}',
@@ -110,11 +110,15 @@ interface GenOptions {
 	 * request请求类文件路径
 	 */
 	requestInstancePath: string
+	/**
+	 * 忽略的目录
+	 */
+	excludeDirs: string[]
 }
 
 export const gen = (options: GenOptions) => {
 
-	const { rootDir, requestInstancePath } = options
+	const { rootDir, requestInstancePath, excludeDirs } = options
 
 	console.log('original root', rootDir)
 
@@ -124,10 +128,9 @@ export const gen = (options: GenOptions) => {
 
 	const excludePaths = [
 		'.DS_Store',
-		'tsconfig.json',
-		'pnpm-lock.yaml',
-		'gen.ts',
-		'package.json'
+		'.vscode',
+		'.idea',
+		...excludeDirs
 	]
 
 	const directories = fs.readdirSync(baseDir)
