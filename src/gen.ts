@@ -88,7 +88,7 @@ const generateTS = (options: {
  */
 export const ${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_') } = (params: ${params}): Promise<{body: ${item[method].responses[200].schema['$ref'].split('#/definitions/')[1].replace(/\./g, '__')}}> => {
   return customFetch({
-		url: '${path.replace(/-/g, '_')}',
+		url: '${path}',
 		method: '${method}',
 		query: params,
 		body: params,
