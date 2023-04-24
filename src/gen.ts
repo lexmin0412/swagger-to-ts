@@ -95,8 +95,7 @@ export const ${requestName} = (params: ${params}): Promise<{body: ${toCamelCase(
   return customFetch({
 		url: '${path}',
 		method: '${method}',
-		query: params,
-		body: params,
+		${method === 'post' ? 'body: params,' : 'query: params,'}
 	})
 }`
 }).join('\n\n')
