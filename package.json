@@ -41,5 +41,8 @@
 	],
 	"types": "./lib/index.d.ts",
 	"jsnext:main": "./es/index.js",
-	"module": "./es/index.js"
+	"module": "./es/index.js",
+	"dependencies": {
+		"@lexmin0412/naming": "0.0.1"
+	}
 }

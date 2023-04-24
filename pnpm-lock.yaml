@@ -1,10 +1,14 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@lexmin0412/naming': 0.0.1
   '@types/node': ^18.15.11
   rimraf: ^5.0.0
   ts-node: ^10.9.1
   typescript: ^5.0.4
+
+dependencies:
+  '@lexmin0412/naming': 0.0.1
 
 devDependencies:
   '@types/node': 18.15.11
@@ -36,6 +40,10 @@ packages:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
+
+  /@lexmin0412/naming/0.0.1:
+    resolution: {integrity: sha512-Sby8wVv2G1guh+0vMqZs6zuEhlUP24w9xWOjAqaqTTfpCHiQSGXrkWoIk5ACZee0aLWJYjON62oFBhq2y7L44A==}
+    dev: false
 
   /@tsconfig/node10/1.0.9:
     resolution: {integrity: sha512-jNsYVVxU8v5g43Erja32laIDHXeoNvFEpX33OK4d6hljo3jDhCBDhx5dhCCTMWUojscpAagGiRkBKxpdl9fxqA==}
