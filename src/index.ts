@@ -7,119 +7,10 @@ type ComplexType = 'integer' | 'array' | 'object'
 type PropType = BasePropType | ComplexType
 
 const typeMap = {
+	integer: 'number',
 	number: 'number',
 	string: 'string',
 }
-
-/**
- * 根据参数名称和描述返回参数的类型
- * @param name
- * @param item
- * @returns
- */
-const generateParamType = (name: string, item: {
-	type: PropType,
-	[key: string]: any
-}): string | undefined => {
-	if (typeMap.hasOwnProperty(item.type)) {
-		return typeMap[item.type as BasePropType]
-	}
-	switch (item.type) {
-		case 'integer':
-			// id 转为字符串
-			if (name.toLowerCase().includes('id')) {
-				return 'string'
-			}
-			return 'number'
-		case 'array':
-			if (item.items.type) {
-				return `${[generateParamType(name, item.items)]}[]`
-			}
-			if (item.items["$ref"]) {
-				return toCamelCase(`${item.items["$ref"].split('#/definitions/')[1].replace(/\./g, '__') }[]`)
-			}
-			return undefined
-		case 'object':
-			return `{
-        ${Object.keys(item.properties).map((property) => {
-					return `${property}: ${generateParamType(property, item.properties[property])}`
-			})}
-      }`
-		default:
-			if (item['$ref']) {
-				return toCamelCase(item['$ref'].split('#/definitions/')[1].replace(/\./g, '__'))
-			}
-			break;
-	}
-}
-
-/**
- * 生成 ts 代码
- * @param options
- */
-const generateTS = (options: {
-	sourceFilePath: string
-	targetFilePath: string
-	requestImportStatement: string
-}) => {
-
-	const { sourceFilePath, targetFilePath, requestImportStatement } = options
-
-	const result = fs.readFileSync(sourceFilePath).toString()
-	const json = JSON.parse(result)
-
-	// 类型定义
-	const definitionTypes = Object.keys(json.definitions).map((definition) => {
-		const item = json.definitions[definition]
-		const interfaceName = toCamelCase(definition.replace(/\./g, '__'))
-		return `export interface ${interfaceName} { ${Object.keys(item.properties || []).map((property) => {
-			const title = item.properties[property]?.title || item.properties[property]?.description
-			const requiredMark = '@required'
-			const isRequired = title?.includes(requiredMark) || item.required?.includes(property)
-			return `
-  /**
-   * ${(isRequired ? title.replace(/@required/g, '   * @required') : title) || 'no description'}
-   */
-  ${property}${isRequired ? '' : '?'}: ${generateParamType(property, item.properties[property])}`
-		})}
-}`
-	}).join('\n\n')
-
-	// 接口代码
-	const routeRequests = Object.keys(json.paths).map((path) => {
-		const item = json.paths[path]
-		const method = Object.keys(item)[0]
-		const params = method === 'post' ? toCamelCase(item[method].parameters[0].schema['$ref'].split('#/definitions/')[1].replace(/\./g, '__')) : `{${item[method].parameters.map((parameter: any) => {
-			const title = parameter.description
-			const requiredMark = '@required'
-			const isRequired = title?.includes(requiredMark)
-			return `
-    /**
-     * ${(isRequired ? title.replace(/@required./g, '     * @required') : title) || '暂无字段描述'}
-     */
-    ${parameter.name.includes('.') ? `'${parameter.name}'` : parameter.name}: ${generateParamType(parameter.name, parameter)}`
-		})}
-  }`
-
-		const requestName = toCamelCase(`${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_')}`)
-
-		return `/**
- * ${item[method].summary.split('\n@author')[0]}
- */
-export const ${requestName} = (params: ${params}): Promise<{body: ${toCamelCase(item[method].responses[200].schema['$ref'].split('#/definitions/')[1].replace(/\./g, '__'))}}> => {
-  return customFetch({
-		url: '${path}',
-		method: '${method}',
-		${method === 'post' ? 'body: params,' : 'query: params,'}
-	})
-}`
-}).join('\n\n')
-
-	fs.writeFileSync(targetFilePath, [requestImportStatement, definitionTypes, routeRequests].join('\n'))
-
-	console.log('file generated, full path:', targetFilePath)
-}
-
 interface GenOptions {
 	/**
 	 * 执行生成任务的根目录
@@ -133,6 +24,15 @@ interface GenOptions {
 	 * 忽略的目录
 	 */
 	excludeDirs?: string[]
+	/**
+	 * 转换配置
+	 */
+	transformConfig: {
+		/**
+		 * 需要转换成字符串的变量数组
+		 */
+		toStringVars?: string[]
+	}
 }
 
 /**
@@ -141,7 +41,120 @@ interface GenOptions {
  */
 export const gen = (options: GenOptions) => {
 
-	const { rootDir, requestInstancePath, excludeDirs = [] } = options
+	const { rootDir, requestInstancePath, excludeDirs = [], transformConfig } = options
+
+	/**
+ * 根据参数名称和描述返回参数的类型
+ * @param name
+ * @param item
+ * @returns
+ */
+	const generateParamType = (name: string, item: {
+		type: PropType,
+		[key: string]: any
+	}): string | undefined => {
+
+		if (transformConfig) {
+			const { toStringVars } = transformConfig
+			if (toStringVars) {
+				if (toStringVars.includes(name)) {
+					return 'string'
+				}
+			}
+		}
+
+		if (typeMap.hasOwnProperty(item.type)) {
+			return typeMap[item.type as BasePropType]
+		}
+		switch (item.type) {
+			case 'array':
+				if (item.items.type) {
+					return `${[generateParamType(name, item.items)]}[]`
+				}
+				if (item.items["$ref"]) {
+					return toCamelCase(`${item.items["$ref"].split('#/definitions/')[1].replace(/\./g, '__')}[]`)
+				}
+				return undefined
+			case 'object':
+				return `{
+        ${Object.keys(item.properties).map((property) => {
+					return `${property}: ${generateParamType(property, item.properties[property])}`
+				})}
+      }`
+			default:
+				if (item['$ref']) {
+					return toCamelCase(item['$ref'].split('#/definitions/')[1].replace(/\./g, '__'))
+				}
+				break;
+		}
+	}
+
+	/**
+	 * 生成 ts 代码
+	 * @param options
+	 */
+	const generateTS = (options: {
+		sourceFilePath: string
+		targetFilePath: string
+		requestImportStatement: string
+	}) => {
+
+		const { sourceFilePath, targetFilePath, requestImportStatement } = options
+
+		const result = fs.readFileSync(sourceFilePath).toString()
+		const json = JSON.parse(result)
+
+		// 类型定义
+		const definitionTypes = Object.keys(json.definitions).map((definition) => {
+			const item = json.definitions[definition]
+			const interfaceName = toCamelCase(definition.replace(/\./g, '__'))
+			return `export interface ${interfaceName} { ${Object.keys(item.properties || []).map((property) => {
+				const title = item.properties[property]?.title || item.properties[property]?.description
+				const requiredMark = '@required'
+				const isRequired = title?.includes(requiredMark) || item.required?.includes(property)
+				return `
+  /**
+   * ${(isRequired ? title.replace(/@required/g, '   * @required') : title) || 'no description'}
+   */
+  ${property}${isRequired ? '' : '?'}: ${generateParamType(property, item.properties[property])}`
+			})}
+}`
+		}).join('\n\n')
+
+		// 接口代码
+		const routeRequests = Object.keys(json.paths).map((path) => {
+			const item = json.paths[path]
+			const method = Object.keys(item)[0]
+			const params = method === 'post' ? toCamelCase(item[method].parameters[0].schema['$ref'].split('#/definitions/')[1].replace(/\./g, '__')) : `{${item[method].parameters.map((parameter: any) => {
+				const title = parameter.description
+				const requiredMark = '@required'
+				const isRequired = title?.includes(requiredMark)
+				return `
+    /**
+     * ${(isRequired ? title.replace(/@required./g, '     * @required') : title) || '暂无字段描述'}
+     */
+    ${parameter.name.includes('.') ? `'${parameter.name}'` : parameter.name}: ${generateParamType(parameter.name, parameter)}`
+			})}
+  }`
+
+			const requestName = toCamelCase(`${method}_${path.split('/').slice(1).join('_').split('v1_')[1].replace(/-/g, '_')}`)
+
+			return `/**
+ * ${item[method].summary.split('\n@author')[0]}
+ */
+export const ${requestName} = (params: ${params}): Promise<{body: ${toCamelCase(item[method].responses[200].schema['$ref'].split('#/definitions/')[1].replace(/\./g, '__'))}}> => {
+  return customFetch({
+		url: '${path}',
+		method: '${method}',
+		${method === 'post' ? 'body: params,' : 'query: params,'}
+	})
+}`
+		}).join('\n\n')
+
+		fs.writeFileSync(targetFilePath, [requestImportStatement, definitionTypes, routeRequests].join('\n'))
+
+		console.log('file generated, full path:', targetFilePath)
+	}
 
 	console.log('original root', rootDir)
 
