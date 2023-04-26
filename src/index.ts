@@ -21,12 +21,12 @@ const generateParamType = (name: string, item: {
 	type: PropType,
 	[key: string]: any
 }): string | undefined => {
-	console.log('name', name, item)
 	if (typeMap.hasOwnProperty(item.type)) {
 		return typeMap[item.type as BasePropType]
 	}
 	switch (item.type) {
 		case 'integer':
+			// id 转为字符串
 			if (name.toLowerCase().includes('id')) {
 				return 'string'
 			}
