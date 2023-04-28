@@ -29,6 +29,12 @@ interface GenOptions {
 	 */
 	transformConfig: {
 		/**
+		 * 字段类型转换
+		 */
+		var2TypeMap: {
+			[key: string]: string[]
+		}
+		/**
 		 * 需要转换成字符串的变量数组
 		 */
 		toStringVars?: string[]
@@ -54,11 +60,23 @@ export const gen = (options: GenOptions) => {
 		[key: string]: any
 	}): string | undefined => {
 
+		// 自定义转换配置优先
 		if (transformConfig) {
-			const { toStringVars } = transformConfig
+			const { toStringVars, var2TypeMap } = transformConfig
 			if (toStringVars) {
 				if (toStringVars.includes(name)) {
 					return 'string'
+				}
+			}
+
+			if (var2TypeMap) {
+				let targetType = Object.keys(var2TypeMap).find(key => {
+					if (var2TypeMap[key].includes(name)) {
+						return key
+					}
+				});
+				if (targetType) {
+					return targetType
 				}
 			}
 		}
