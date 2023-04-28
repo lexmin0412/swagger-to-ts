@@ -1,5 +1,8 @@
 # @lexmin0412/swagger2ts
 
+[![NPM version](https://img.shields.io/npm/v/@lexmin0412/swagger2ts.svg?style=flat)](https://npmjs.org/package/@lexmin0412/swagger2ts)
+[![NPM downloads](http://img.shields.io/npm/dm/@lexmin0412/swagger2ts.svg?style=flat)](https://npmjs.org/package/@lexmin0412/swagger2ts)
+
 A tool for transfer swagger to ts, available both for API and CLI.
 
 ## Install
