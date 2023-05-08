@@ -26,13 +26,22 @@ const rootDir = path.resolve(__dirname)
 const requestInstancePath = path.resolve(__dirname, 'src', 'request.ts')
 
 gen({
-	rootDir,
+  rootDir,
   requestInstancePath,
   excludeDirs: [
-		'node_modules',
-		'test',
-		'docs',
-  ]
+    'assets',
+  ],
+  transformConfig: {
+    var2TypeMap: {
+      'string': [
+        'id',
+        "parent_id"
+      ],
+      'string[]': [
+        'ids'
+      ]
+    },
+  }
 })
 ```
 
@@ -58,5 +67,20 @@ interface GenOptions {
 	 * excluded paths when scanning *.swagger.json files
 	 */
 	excludeDirs: string[]
+	/**
+	 * type transforming configuration
+	 */
+	transformConfig: {
+		/**
+		 * variable type transforming map
+		 */
+		var2TypeMap: {
+			[key: string]: string[]
+		}
+		/**
+		 * variable list that should be transformed to string
+		 */
+		toStringVars?: string[]
+	}
 }
 ```
